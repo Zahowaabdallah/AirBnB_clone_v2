@@ -10,7 +10,7 @@ from models.state import State
 from models.city import City
 from models.amenity import Amenity
 from models.review import Review
-
+from datetime import datetime
 
 class HBNBCommand(cmd.Cmd):
     """ Contains the functionality for the HBNB console"""
@@ -114,17 +114,51 @@ class HBNBCommand(cmd.Cmd):
         pass
 
     def do_create(self, args):
-        """ Create an object of any class"""
+        """Create an object of any class with given parameters"""
         if not args:
             print("** class name missing **")
             return
-        elif args not in HBNBCommand.classes:
+
+        arg_list = args.split()
+        class_name = arg_list[0]
+        if class_name not in HBNBCommand.classes:
             print("** class doesn't exist **")
             return
-        new_instance = HBNBCommand.classes[args]()
+
+        # Parsing parameters
+        params = {}
+        for arg in arg_list[1:]:
+            if "=" in arg:
+                key, value = arg.split("=")
+                key = key.replace("_", " ")
+                if value[0] == '"' and value[-1] == '"':
+                    # String value
+                    value = value[1:-1].replace("\\", "").replace("_", " ")
+                elif "." in value:
+                    # Float value
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        continue
+                else:
+                    # Integer value
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        continue
+                params[key] = value
+        # Ensure 'created_at' and 'updated_at' are present in params
+        if 'created_at' not in params:
+            params['created_at'] = datetime.now().isoformat()
+        # Ensure 'updated_at' is present in params
+        if 'updated_at' not in params:
+            params['updated_at'] = datetime.now().isoformat()
+        if '__class__' in params:
+            del params['__class__']
+        new_instance = HBNBCommand.classes[class_name](**params)
+        storage.new(new_instance)  # Add the new instance to storage
         storage.save()
         print(new_instance.id)
-        storage.save()
 
     def help_create(self):
         """ Help information for the create method """
