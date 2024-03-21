@@ -1,8 +1,3 @@
-#!/usr/bin/python3
-"""This module defines a class to manage file storage for hbnb clone"""
-import json
-
-
 class FileStorage:
     """This class manages storage of hbnb models in JSON format"""
     __file_path = 'file.json'
@@ -15,30 +10,33 @@ class FileStorage:
         else:
             filtered_objects = {}
             for key, obj in FileStorage.__objects.items():
-                if type(obj) == cls:
+                if isinstance(obj, cls):
                     filtered_objects[key] = obj
             return filtered_objects
 
     def delete(self, obj=None):
-        if (obj is None):
+        """Deletes obj from __objects if it's inside"""
+        if obj is None:
             return
         key = "{}.{}".format(obj.__class__.__name__, obj.id)
         if key in FileStorage.__objects:
             del FileStorage.__objects[key]
-            self.save()
+            self.save()  # Save changes after deletion
 
     def new(self, obj):
         """Adds new object to storage dictionary"""
-        self.all().update({obj.to_dict()['__class__'] + '.' + obj.id: obj})
+        key = "{}.{}".format(obj.__class__.__name__, obj.id)
+        FileStorage.__objects[key] = obj
 
     def save(self):
         """Saves storage dictionary to file"""
+        from models import storage
         with open(FileStorage.__file_path, 'w') as f:
             temp = {}
-            temp.update(FileStorage.__objects)
-            for key, val in temp.items():
+            for key, val in FileStorage.__objects.items():
                 temp[key] = val.to_dict()
             json.dump(temp, f)
+        storage.new(self)  # Add this line to update storage after save
 
     def reload(self):
         """Loads storage dictionary from file"""
@@ -51,10 +49,10 @@ class FileStorage:
         from models.review import Review
 
         classes = {
-                    'BaseModel': BaseModel, 'User': User, 'Place': Place,
-                    'State': State, 'City': City, 'Amenity': Amenity,
-                    'Review': Review
-                  }
+            'BaseModel': BaseModel, 'User': User, 'Place': Place,
+            'State': State, 'City': City, 'Amenity': Amenity,
+            'Review': Review
+        }
         try:
             temp = {}
             with open(FileStorage.__file_path, 'r') as f:
